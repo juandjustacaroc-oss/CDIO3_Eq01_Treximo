@@ -1,5 +1,6 @@
 # CDIO3_Eq01_Treximo: Smart Athletic Timing & Physiological Monitoring System
 Sistema distribuido basado en ESP32 para cronometraje automático y monitoreo fisiológico en pruebas de atletismo (100 m), diseñado para proporcionar mediciones precisas de tiempo, velocidad y frecuencia cardíaca en tiempo real. Este proyecto integra comunicación inalámbrica de baja latencia, procesamiento embebido y una interfaz web ligera para ofrecer retroalimentación inmediata al entrenador sin depender de infraestructura externa o servicios en la nube.
+
 ![Status](https://img.shields.io/badge/Status-Prototipo-yellow)
 
 # Objetivo del Proyecto
