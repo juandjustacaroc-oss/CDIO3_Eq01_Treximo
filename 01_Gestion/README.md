@@ -40,9 +40,9 @@ Este documento detalla todos los componentes electrónicos, electromecánicos y 
 | 2    | **Pantalla TFT**       |   1   | **TFT SPI ST7735 1.77” / 160x128**          | Visualización local de tiempo, estado y frecuencia cardíaca                 |     $ 34.600     |
 | 3    | **Batería recargable** |   1   | **LiPo / Li-ion 3.7 V 2200 mAh**            | Alimentación portátil del cronómetro                                        |     $ 20.000     |
 | 4    | **Módulo de carga**    |   1   | **TP4056 con protección**                   | Carga segura de la batería del cronómetro                                   |      $ 5.500     |
-| 5    | **Carcasa**            |   1   | **Caja impresa en PLA**                     | Protección mecánica e integración física del cronómetro                     |     $ 20.000     |
+| 5    | **Reloj de Tiempo Real**|   1   | **Caja impresa en PLA**                     | Protección mecánica e integración física del cronómetro         |               $ 20.000     |
 | 6    | **Indicador visual**   |   1   | **LED + resistencia**                       | Confirmación visual de estados y eventos                                    |      $ 1.000     |
-
+| 7    | **Carcasa**            |   1   | **Caja impresa en PLA**                     | Protección mecánica e integración física del cronómetro                     |     $ 20.000     |
 # Peon
 | Ítem | Componente              | Cant. | Referencia / Especificación                 | Función                                   | Est. Costo (COP) |
 | :--- | :---------------------- | :---: | :------------------------------------------ | :---------------------------------------- | :--------------: |
