@@ -5,17 +5,17 @@ Sistema distribuido basado en ESP32 para cronometraje automático y monitoreo fi
 
 # Objetivo del Proyecto
 Desarrollar un sistema portátil y autónomo capaz de:
--Detectar automáticamente el inicio y finalización de la carrera.
--Calcular el tiempo exacto del recorrido.
--Estimar la velocidad promedio del atleta.
--Monitorear la frecuencia cardíaca durante la carrera y la fase de recuperación.
--Visualizar métricas en pantalla OLED y en una interfaz web básica embebida.
--Reiniciar el sistema de forma segura para múltiples sesiones consecutivas.
+- Detectar automáticamente el inicio y finalización de la carrera.
+- Calcular el tiempo exacto del recorrido.
+- Estimar la velocidad promedio del atleta.
+- Monitorear la frecuencia cardíaca durante la carrera y la fase de recuperación.
+- Visualizar métricas en pantalla OLED y en una interfaz web básica embebida.
+- Reiniciar el sistema de forma segura para múltiples sesiones consecutivas.
 
 # Arquitectura General
--Peon Salida/Peon Llegada.
--Cerebro Cronometro.
--Banda de variables fisiologicas.
+- Peon Salida/Peon Llegada.
+- Cerebro Cronometro.
+- Banda de variables fisiologicas.
 La comunicación entre nodos se realiza mediante ESP-NOW, garantizando baja latencia y operación sin router.
 El nodo central también opera como punto de acceso WiFi para permitir la visualización de datos desde un smartphone o tablet.
 
