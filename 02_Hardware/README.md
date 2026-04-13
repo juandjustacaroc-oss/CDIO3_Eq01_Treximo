@@ -1,4 +1,4 @@
-# 02_Hardware
+# Hardware
 
 ## Diseño y Arquitectura Física del Sistema
 
