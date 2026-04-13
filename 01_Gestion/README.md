@@ -1,5 +1,4 @@
 # Gestion
-
 ## Gestión y Control del Proyecto
 
 Esta carpeta contiene toda la documentación asociada a la planificación, control y seguimiento del proyecto **Smart Athletic Timing & Monitoring System**.
