@@ -1,4 +1,4 @@
-# 03_Firmware
+# Firmware
 
 ## Firmware del Sistema
 
