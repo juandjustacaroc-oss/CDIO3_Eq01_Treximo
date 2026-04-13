@@ -33,7 +33,7 @@ Lista consolidada de materiales del sistema, incluyendo:
 # Bill Of Materials (BOM)
 Este documento detalla todos los componentes electrónicos, electromecánicos y materiales de manufactura necesarios para un sistema básico para construir un sistema funcional.
 
-> Cronometro
+# Cronometro
 | Ítem | Componente             | Cant. | Referencia / Especificación                 | Función                                                                     | Est. Costo (COP) |
 | :--- | :--------------------- | :---: | :------------------------------------------ | :-------------------------------------------------------------------------- | :--------------: |
 | 1    | **Microcontrolador**   |   1   | **ESP32 DevKit V1 / ESP32-WROOM-32 DevKit** | Procesamiento principal del cronómetro, control de estados y comunicaciones |     $ 31.178     |
@@ -43,7 +43,7 @@ Este documento detalla todos los componentes electrónicos, electromecánicos y 
 | 5    | **Carcasa**            |   1   | **Caja impresa en PLA**                     | Protección mecánica e integración física del cronómetro                     |     $ 20.000     |
 | 6    | **Indicador visual**   |   1   | **LED + resistencia**                       | Confirmación visual de estados y eventos                                    |      $ 1.000     |
 
-> Peon
+# Peon
 | Ítem | Componente              | Cant. | Referencia / Especificación                 | Función                                   | Est. Costo (COP) |
 | :--- | :---------------------- | :---: | :------------------------------------------ | :---------------------------------------- | :--------------: |
 | 12   | **Microcontrolador**    |   1   | **ESP32 DevKit V1 / ESP32-WROOM-32 DevKit** | Control del peón y transmisión de eventos |     $ 31.178     |
@@ -55,7 +55,7 @@ Este documento detalla todos los componentes electrónicos, electromecánicos y 
 | 18   | **Indicador visual**    |   1   | **LED + resistencia**                       | Confirmación visual de detección y estado |      $ 1.000     |
 
 
-> Banda
+# Banda
 | Ítem | Componente                        | Cant. | Referencia / Especificación                 | Función                                         | Est. Costo (COP) |
 | :--- | :-------------------------------- | :---: | :------------------------------------------ | :---------------------------------------------- | :--------------: |
 | 7    | **Microcontrolador**              |   1   | **ESP32 DevKit V1 / ESP32-WROOM-32 DevKit** | Adquisición y transmisión de datos fisiológicos |     $ 31.178     |
