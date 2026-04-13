@@ -5,8 +5,6 @@ Esta carpeta contiene toda la documentación asociada a la planificación, contr
 
 La información aquí almacenada corresponde a la fase de estructuración, auditoría técnica y control de avance bajo metodología CDIO.
 
----
-
 ## Contenido
 
 ### 📄 Actas
