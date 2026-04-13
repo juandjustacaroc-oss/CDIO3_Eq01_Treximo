@@ -1,4 +1,4 @@
-# 01_Gestion
+# Gestion
 
 ## Gestión y Control del Proyecto
 
