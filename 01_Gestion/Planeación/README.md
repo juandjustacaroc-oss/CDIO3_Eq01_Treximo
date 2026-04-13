@@ -8,23 +8,21 @@ Propósito del IPAC: Organizar y dar trazabilidad a las actividades de diseño, 
 ## 2. Planeación por fases
 ### Fase 1. Planificación y auditoría
 
-Semana 1
+Semana 1 
 Objetivo: Reorganizar el proyecto y establecer bases técnicas claras.
-
-Actividades
-
-Reestructuración del cronograma general.
-Planificación detallada de pruebas unitarias por subsistema.
-Definición de criterios de validación técnica.
-Organización del repositorio y documentación.
-Inicio de auditoría técnica del diseño preliminar.
-Actualización de documentos anteriores.
+Actividades:
++ Reestructuración del cronograma general.
++ Planificación detallada de pruebas unitarias por subsistema.
++ Definición de criterios de validación técnica.
++ Organización del repositorio y documentación.
++ Inicio de auditoría técnica del diseño preliminar.
++ Actualización de documentos anteriores.
 
 Resultados esperados
 
-Cronograma actualizado.
-Matriz preliminar de pruebas unitarias.
-Documentación actualizada.
+* Cronograma actualizado.
+* Matriz preliminar de pruebas unitarias.
+* Documentación actualizada.
 
 ### Fase 2. Auditoría y consolidación de diseño
 
@@ -189,3 +187,26 @@ Resultados esperados
 Demostración funcional en entorno real.
 Dossier técnico consolidado.
 Evidencias finales organizadas.
+
+
+| Tipo            | Actividad                                                   | Evidencia esperada                          | Semana |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------- | ------ |
+| Revisión        | Actualizar información de documentos anteriores             | Documentación actualizada                   | 1      |
+| Compras         | Gestionar pago y envío de ítems pendientes                  | Tracking number recibido                    | 2      |
+| Diseño PCB      | Corregir PCB para nueva batería                             | Archivo Gerber generado y revisado          | 3      |
+| Diseño mecánico | Corregir modelo 3D para nuevos diseños                      | Modelo 3D actualizado                       | 3      |
+| Diseño software | Diseñar software e interfaz                                 | Primer diseño de interfaz                   | 4      |
+| Prueba          | Validar protocolo I2C del sensor                            | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar protocolo SPI de pantalla                           | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar funcionamiento del sensor de presencia              | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar funcionamiento del sensor de larga distancia        | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar funcionamiento del sensor de frecuencia             | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar funcionamiento del RTC                              | Trama visible en monitor serial             | 4      |
+| Prueba          | Validar funcionamiento del cronómetro (cerebro)             | Comportamiento visible en pantalla TFT      | 6      |
+| Prueba          | Validar funcionamiento de peones                            | Medición de velocidad en monitor serial     | 6      |
+| Prueba          | Validar funcionamiento del sistema conjunto                 | Comportamiento visible en pantalla TFT      | 6      |
+| Prueba          | Validar funcionamiento de transmisión de datos a página web | Correspondencia entre pantalla y página web | 7      |
+| Prueba          | Montaje total con diseños mecánicos                         | Sistema ensamblado                          | 8      |
+| Prueba          | Correcciones del diseño                                     | Sistema ajustado                            | 8      |
+| Final           | Demostración en funcionamiento real                         | Validación integral del sistema             | 9      |
+
