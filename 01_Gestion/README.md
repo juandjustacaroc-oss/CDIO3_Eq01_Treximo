@@ -1,12 +1,9 @@
-# 01_Gestion
-
+# Gestion
 ## Gestión y Control del Proyecto
 
 Esta carpeta contiene toda la documentación asociada a la planificación, control y seguimiento del proyecto **Smart Athletic Timing & Monitoring System**.
 
 La información aquí almacenada corresponde a la fase de estructuración, auditoría técnica y control de avance bajo metodología CDIO.
-
----
 
 ## Contenido
 
@@ -31,9 +28,6 @@ Lista consolidada de materiales del sistema, incluyendo:
 - Estado de envío
 - Observaciones técnicas
 
-El BOM corresponde a la versión auditada posterior a la revisión técnica del diseño.
-
----
 
 ### 📅 Cronogramas
 Planificación temporal del proyecto:
