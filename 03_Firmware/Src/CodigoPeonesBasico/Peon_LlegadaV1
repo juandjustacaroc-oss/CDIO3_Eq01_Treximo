@@ -5,7 +5,7 @@
 
   - TRIG: GPIO 15
   - ECHO: GPIO 2   (IMPORTANTE: el ECHO del HC-SR04 es 5V. Usa divisor/level shifter a 3.3V)
-  - LED : GPIO 18
+  - LED : GPIO 4
 
   Envía FINISH al CEREBRO cuando detecta un objeto a menos de umbral_cm.
 */
