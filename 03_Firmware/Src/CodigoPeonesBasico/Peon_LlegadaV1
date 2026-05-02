@@ -1,0 +1,194 @@
+
+/*
+  PEÓN DE LLEGADA - v2
+  ESP32 + HC-SR04 + ESP-NOW (solo TX)
+
+  - TRIG: GPIO 15
+  - ECHO: GPIO 2   (IMPORTANTE: el ECHO del HC-SR04 es 5V. Usa divisor/level shifter a 3.3V)
+  - LED : GPIO 18
+
+  Envía FINISH al CEREBRO cuando detecta un objeto a menos de umbral_cm.
+*/
+
+#include <WiFi.h>
+#include <esp_now.h>
+#include <esp_wifi.h>
+#include <esp_arduino_version.h>
+#ifndef ESP_ARDUINO_VERSION_MAJOR
+#define ESP_ARDUINO_VERSION_MAJOR 2
+#endif
+
+#define TRIG_PIN 15
+#define ECHO_PIN 2
+#define LED_PIN  18
+
+// ================== CONFIG ==================
+#define ESPNOW_CHANNEL 1         // Pon el mismo canal en TODOS los nodos
+static const float umbral_cm = 50.0f;
+static const uint32_t debounce_ms = 2500;  // evita dobles disparos
+static const uint8_t  nLecturasConfirmar = 3; // nº lecturas seguidas bajo umbral para confirmar
+
+// MAC del CEREBRO (reemplazar por la real)
+uint8_t macCerebro[] = {0x00, 0x4B, 0x12, 0x21, 0x73, 0xC0};
+
+// ================== PROTOCOLO ==================
+enum : uint8_t {
+  MSG_START  = 1,
+  MSG_FINISH = 2,
+  MSG_HR     = 10,
+  MSG_CMD    = 20
+};
+
+enum : uint8_t {
+  SRC_PEON_SALIDA  = 1,
+  SRC_PEON_LLEGADA = 2,
+  SRC_BANDA_HR     = 3,
+  SRC_CEREBRO      = 4
+};
+
+enum : uint8_t {
+  PHASE_IDLE     = 0,
+  PHASE_RUN      = 1,
+  PHASE_RECOVERY = 2
+};
+
+typedef struct __attribute__((packed)) {
+  uint8_t  msgType;
+  uint8_t  src;
+  uint16_t msgId;
+  uint32_t ms;
+  uint16_t raceId;
+  uint8_t  athleteId;
+  uint8_t  phase;
+  int16_t  value1;
+  int16_t  value2;
+} Packet;
+
+// ================== ESTADO ==================
+static uint16_t msgId = 0;
+static uint32_t ultimaDet_ms = 0;
+static uint8_t bajoUmbralCount = 0;
+
+static float medirDistanciaCM() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // 30ms timeout -> ~5m
+  uint32_t dur = pulseIn(ECHO_PIN, HIGH, 30000);
+  if (dur == 0) return -1.0f;
+  return (dur * 0.0343f) / 2.0f;
+}
+
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+static void onDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
+  (void)info;
+  Serial.print("ESP-NOW send: ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
+}
+#else
+static void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  (void)mac_addr;
+  Serial.print("ESP-NOW send: ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
+}
+#endif
+
+static void enviarEvento(float distancia_cm) {
+  Packet p{};
+  p.msgType = MSG_FINISH;
+  p.src     = SRC_PEON_LLEGADA;
+  p.msgId   = ++msgId;
+  p.ms      = millis();
+  p.raceId  = 0;
+  p.athleteId = 0;
+  p.phase   = PHASE_IDLE;
+  p.value1  = (int16_t)lroundf(distancia_cm * 10.0f); // cm*10
+  p.value2  = 0;
+
+  // Enviar 3 veces para robustez (peón es solo TX, sin ACK)
+  for (int i = 0; i < 3; i++) {
+    esp_now_send(macCerebro, (uint8_t*)&p, sizeof(p));
+    delay(20);
+  }
+
+  // Confirmación visual
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(80);
+    digitalWrite(LED_PIN, LOW);
+    delay(80);
+  }
+
+  Serial.print(">>> Evento enviado. Dist=");
+  Serial.print(distancia_cm, 1);
+  Serial.print("cm  msgId=");
+  Serial.println(p.msgId);
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(300);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  // Fijar canal
+  esp_wifi_set_channel(ESPNOW_CHANNEL, WIFI_SECOND_CHAN_NONE);
+
+  Serial.println();
+  Serial.println("PEÓN DE LLEGADA - v2");
+  Serial.print("MAC local: ");
+  Serial.println(WiFi.macAddress());
+  Serial.print("Canal ESPNOW: ");
+  Serial.println(ESPNOW_CHANNEL);
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ERROR: esp_now_init()");
+    while(true) delay(1000);
+  }
+  esp_now_register_send_cb(onDataSent);
+
+  esp_now_peer_info_t peer{};
+  memcpy(peer.peer_addr, macCerebro, 6);
+  peer.channel = ESPNOW_CHANNEL;
+  peer.encrypt = false;
+
+  if (esp_now_add_peer(&peer) != ESP_OK) {
+    Serial.println("ERROR: esp_now_add_peer(macCerebro)");
+    while(true) delay(1000);
+  }
+
+  Serial.print("Listo. Umbral=");
+  Serial.print(umbral_cm);
+  Serial.println("cm");
+}
+
+void loop() {
+  float d = medirDistanciaCM();
+
+  if (d > 0 && d < umbral_cm) {
+    bajoUmbralCount++;
+  } else {
+    bajoUmbralCount = 0;
+  }
+
+  uint32_t ahora = millis();
+  if (bajoUmbralCount >= nLecturasConfirmar) {
+    if (ahora - ultimaDet_ms > debounce_ms) {
+      ultimaDet_ms = ahora;
+      bajoUmbralCount = 0;
+      enviarEvento(d);
+    }
+  }
+
+  delay(50);
+}
