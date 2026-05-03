@@ -20,7 +20,7 @@
 
 #define TRIG_PIN 15
 #define ECHO_PIN 2
-#define LED_PIN  18
+#define LED_PIN  4
 
 // ================== CONFIG ==================
 #define ESPNOW_CHANNEL 1         // Pon el mismo canal en TODOS los nodos
