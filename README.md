@@ -24,7 +24,7 @@ El nodo central también opera como punto de acceso WiFi para permitir la visual
 - ✅Comunicación estable entre nodos
 - ❌Cronometría precisa basada en eventos
 - ❌Monitoreo cardíaco integrado
-- ❌Interfaz TFT operativa
+- ✅Interfaz TFT operativa
 - ❌Dashboard web ligero en pruebas
 
 # Librerías necesarias
