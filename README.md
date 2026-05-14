@@ -22,7 +22,7 @@ El nodo central también opera como punto de acceso WiFi para permitir la visual
 # Estado Actual
 - ❌Hardware funcional
 - ✅Comunicación estable entre nodos
-- ❌Cronometría precisa basada en eventos
+- ✅Cronometría precisa basada en eventos
 - ❌Monitoreo cardíaco integrado
 - ✅Interfaz TFT operativa
 - ❌Dashboard web ligero en pruebas
