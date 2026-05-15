@@ -3,11 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
-import '../../domain/entities/entities.dart';
+import '../../domain/entities/entities.dart' hide SessionState;
+import '../../data/datasources/mock_datasource.dart';
 import '../blocs/session_bloc.dart';
-import '../blocs/athlete_bloc.dart';
 import '../widgets/components.dart';
-import '../widgets/treximo_components.dart';
 
 // ─────────────────────────────────────────
 // HOME SCREEN
@@ -28,7 +27,20 @@ class HomeScreen extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  const TreximoLogoHeader(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, d MMM').format(DateTime.now()),
+                        style: const TextStyle(fontSize: 13, color: AppColors.textTertiary),
+                      ),
+                      const Text('Sprint Timer',
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary)),
+                    ],
+                  ),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => context.push('/connection'),
@@ -97,33 +109,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Info Pages
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _InfoChip(
-                      label: '¿Quiénes somos?',
-                      icon: Icons.info_outline,
-                      onTap: () => context.push('/about'),
-                    ),
-                    const SizedBox(width: 8),
-                    _InfoChip(
-                      label: '¿Cómo funciona?',
-                      icon: Icons.help_outline,
-                      onTap: () => context.push('/how-it-works'),
-                    ),
-                    const SizedBox(width: 8),
-                    _InfoChip(
-                      label: 'Manual',
-                      icon: Icons.menu_book,
-                      onTap: () => context.push('/manual'),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 28),
 
               // Recent sessions
@@ -134,7 +119,7 @@ class HomeScreen extends StatelessWidget {
                       color: AppColors.textPrimary)),
               const SizedBox(height: 12),
 
-              BlocBuilder<SessionBloc, SessionBlocState>(
+              BlocBuilder<SessionBloc, SessionState>(
                 builder: (context, state) {
                   if (state is SessionsLoading) {
                     return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
@@ -148,19 +133,14 @@ class HomeScreen extends StatelessWidget {
                       );
                     }
                     return Column(
-                      children: recent.map((s) {
-                        String aName = '#${s.athleteId}';
-                        final aState = context.read<AthleteBloc>().state;
-                        if (aState is AthletesLoaded) {
-                          final a = aState.athletes.where((a) => a.athleteId == s.athleteId).firstOrNull;
-                          if (a != null) aName = a.name;
-                        }
-                        return SessionTile(
-                          session: s,
-                          athleteName: aName,
-                          onTap: () => context.push('/session/${s.sessionId}'),
-                        );
-                      }).toList(),
+                      children: recent.map((s) => SessionTile(
+                        session: s,
+                        athleteName: mockAthletes
+                            .firstWhere((a) => a.athleteId == s.athleteId,
+                                orElse: () => Athlete(athleteId: s.athleteId, name: '#${s.athleteId}'))
+                            .name,
+                        onTap: () => context.push('/session/${s.sessionId}'),
+                      )).toList(),
                     );
                   }
                   return const SizedBox();
@@ -214,37 +194,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _InfoChip({required this.label, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.cyan.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: AppColors.cyan),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 13, color: AppColors.cyan, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String message;
@@ -283,71 +232,20 @@ class AthletesScreen extends StatefulWidget {
 class _AthletesScreenState extends State<AthletesScreen> {
   String _query = '';
 
-  void _showAthleteDialog({Athlete? athlete}) {
-    final nameCtrl = TextEditingController(text: athlete?.name ?? '');
-    final idCtrl = TextEditingController(text: athlete?.athleteId.toString() ?? '');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(athlete == null ? 'Nuevo Atleta' : 'Editar Atleta', style: const TextStyle(color: AppColors.textPrimary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: idCtrl,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Código / ID Numérico', labelStyle: TextStyle(color: AppColors.textSecondary)),
-            ),
-            TextField(
-              controller: nameCtrl,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Nombre', labelStyle: TextStyle(color: AppColors.textSecondary)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () {
-              final id = int.tryParse(idCtrl.text.trim());
-              final name = nameCtrl.text.trim();
-              if (id != null && name.isNotEmpty) {
-                final newAthlete = Athlete(athleteId: id, name: name);
-                if (athlete == null) {
-                  context.read<AthleteBloc>().add(CreateAthlete(newAthlete));
-                } else {
-                  context.read<AthleteBloc>().add(UpdateAthlete(newAthlete));
-                }
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Guardar', style: TextStyle(color: AppColors.cyan)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final filtered = mockAthletes
+        .where((a) =>
+            a.name.toLowerCase().contains(_query.toLowerCase()) ||
+            '${a.athleteId}'.contains(_query))
+        .toList();
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: const Text('Atletas'),
         backgroundColor: AppColors.bg,
         foregroundColor: AppColors.textPrimary,
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.cyan,
-        foregroundColor: AppColors.bg,
-        onPressed: () => _showAthleteDialog(),
-        child: const Icon(Icons.person_add),
       ),
       body: Column(
         children: [
@@ -363,32 +261,17 @@ class _AthletesScreenState extends State<AthletesScreen> {
             ),
           ),
           Expanded(
-            child: BlocBuilder<AthleteBloc, AthleteState>(
-              builder: (context, state) {
-                if (state is AthletesLoading) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
-                }
-                if (state is AthletesLoaded) {
-                  final filtered = state.athletes
-                      .where((a) =>
-                          a.name.toLowerCase().contains(_query.toLowerCase()) ||
-                          '${a.athleteId}'.contains(_query))
-                      .toList();
-
-                  if (filtered.isEmpty) {
-                    return _EmptyState(
-                        icon: Icons.person_search,
-                        message: 'No se encontraron atletas con "$_query"');
-                  }
-
-                  return ListView.builder(
+            child: filtered.isEmpty
+                ? _EmptyState(
+                    icon: Icons.person_search,
+                    message: 'No se encontraron atletas con "$_query"')
+                : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
                       final a = filtered[i];
                       return GestureDetector(
                         onTap: () => context.push('/athlete/${a.athleteId}'),
-                        onLongPress: () => _showAthleteDialog(athlete: a), // Long press to edit
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(16),
@@ -439,11 +322,7 @@ class _AthletesScreenState extends State<AthletesScreen> {
                         ),
                       );
                     },
-                  );
-                }
-                return const SizedBox();
-              },
-            ),
+                  ),
           ),
         ],
       ),
@@ -463,13 +342,9 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   int? _athleteId;
-  double? _distance;
+  int? _distance;
 
-  @override
-  void initState() {
-    super.initState();
-    _applyFilters();
-  }
+  final _athletes = mockAthletes.map((a) => (id: a.athleteId, name: a.name)).toList();
 
   void _applyFilters() {
     context.read<SessionBloc>().add(LoadSessions(
@@ -489,30 +364,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: Column(
         children: [
-          BlocBuilder<AthleteBloc, AthleteState>(
-            builder: (context, athleteState) {
-              List<({int id, String name})> athletes = [];
-              if (athleteState is AthletesLoaded) {
-                athletes = athleteState.athletes.map((a) => (id: a.athleteId, name: a.name)).toList();
-              }
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: FilterBar(
-                  selectedAthleteId: _athleteId,
-                  selectedDistance: _distance,
-                  athletes: athletes,
-                  onAthleteChanged: (v) { setState(() => _athleteId = v); _applyFilters(); },
-                  onDistanceChanged: (v) { setState(() => _distance = v); _applyFilters(); },
-                  onClearFilters: () {
-                    setState(() { _athleteId = null; _distance = null; });
-                    _applyFilters();
-                  },
-                ),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: FilterBar(
+              selectedAthleteId: _athleteId,
+              selectedDistance: _distance,
+              athletes: _athletes,
+              onAthleteChanged: (v) { setState(() => _athleteId = v); _applyFilters(); },
+              onDistanceChanged: (v) { setState(() => _distance = v); _applyFilters(); },
+              onClearFilters: () {
+                setState(() { _athleteId = null; _distance = null; });
+                _applyFilters();
+              },
+            ),
           ),
           Expanded(
-            child: BlocBuilder<SessionBloc, SessionBlocState>(
+            child: BlocBuilder<SessionBloc, SessionState>(
               builder: (context, state) {
                 if (state is SessionsLoading) {
                   return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
@@ -524,34 +391,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       message: 'No hay sesiones con los filtros actuales.',
                     );
                   }
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: PerformanceBarChart(sessions: state.sessions),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: state.sessions.length,
-                          itemBuilder: (_, i) {
-                            final s = state.sessions[i];
-                            String aName = '#${s.athleteId}';
-                            final aState = context.read<AthleteBloc>().state;
-                            if (aState is AthletesLoaded) {
-                              final a = aState.athletes.where((a) => a.athleteId == s.athleteId).firstOrNull;
-                              if (a != null) aName = a.name;
-                            }
-                            return SessionTile(
-                              session: s,
-                              athleteName: aName,
-                              onTap: () => context.push('/session/${s.sessionId}'),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: state.sessions.length,
+                    itemBuilder: (_, i) {
+                      final s = state.sessions[i];
+                      return SessionTile(
+                        session: s,
+                        athleteName: mockAthletes
+                            .firstWhere((a) => a.athleteId == s.athleteId,
+                                orElse: () => Athlete(athleteId: s.athleteId, name: '#${s.athleteId}'))
+                            .name,
+                        onTap: () => context.push('/session/${s.sessionId}'),
+                      );
+                    },
                   );
                 }
                 if (state is SessionsError) {

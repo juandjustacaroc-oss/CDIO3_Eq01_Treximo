@@ -25,17 +25,18 @@ class Session extends Equatable {
   final String sessionId;
   final int athleteId;
   final DateTime datetimeStart;
-  final double distanceMeters; // 50.0 o 100.0
+  final int distanceMeters; // 50 o 100
 
   final int timeMs;
   final double avgSpeedMps;
   final double avgSpeedKmh;
 
-  final int bpmFinish;
-  final int bpmRecovery;
-  final bool distanceCalibrated;
+  final double hrAvgRun;
+  final double hrMaxRun;
+  final double hrAvgRecovery;
+  final double hrMaxRecovery;
 
-  /// ECV = avgSpeedMps / (bpmFinish)  (configurable en Settings)
+  /// ECV = avgSpeedMps / hrAvgRun  (configurable en Settings)
   final double ecv;
 
   final String? notes;
@@ -54,9 +55,10 @@ class Session extends Equatable {
     required this.timeMs,
     required this.avgSpeedMps,
     required this.avgSpeedKmh,
-    required this.bpmFinish,
-    required this.bpmRecovery,
-    required this.distanceCalibrated,
+    required this.hrAvgRun,
+    required this.hrMaxRun,
+    required this.hrAvgRecovery,
+    required this.hrMaxRecovery,
     required this.ecv,
     this.notes,
     this.deviceRaceId,

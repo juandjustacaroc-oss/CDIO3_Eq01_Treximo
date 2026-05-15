@@ -11,7 +11,7 @@ abstract class SessionEvent extends Equatable {
 
 class LoadSessions extends SessionEvent {
   final int? athleteId;
-  final double? distanceMeters;
+  final int? distanceMeters;
   final DateTime? from;
   final DateTime? to;
   const LoadSessions({this.athleteId, this.distanceMeters, this.from, this.to});
@@ -31,20 +31,19 @@ class DeleteSession extends SessionEvent {
 }
 
 // ─── States ──────────────────────────────
-// Named SessionBlocState to avoid clash with entities.dart SessionState enum
-abstract class SessionBlocState extends Equatable {
-  const SessionBlocState();
+abstract class SessionState extends Equatable {
+  const SessionState();
   @override List<Object?> get props => [];
 }
 
-class SessionsInitial extends SessionBlocState {}
+class SessionsInitial extends SessionState {}
 
-class SessionsLoading extends SessionBlocState {}
+class SessionsLoading extends SessionState {}
 
-class SessionsLoaded extends SessionBlocState {
+class SessionsLoaded extends SessionState {
   final List<Session> sessions;
   final int? filterAthleteId;
-  final double? filterDistance;
+  final int? filterDistance;
   final DateTime? filterFrom;
   final DateTime? filterTo;
 
@@ -60,14 +59,14 @@ class SessionsLoaded extends SessionBlocState {
   List<Object?> get props => [sessions, filterAthleteId, filterDistance, filterFrom, filterTo];
 }
 
-class SessionsError extends SessionBlocState {
+class SessionsError extends SessionState {
   final String message;
   const SessionsError(this.message);
   @override List<Object?> get props => [message];
 }
 
 // ─── BLoC ────────────────────────────────
-class SessionBloc extends Bloc<SessionEvent, SessionBlocState> {
+class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final SessionRepository _repo;
 
   SessionBloc(this._repo) : super(SessionsInitial()) {
@@ -76,7 +75,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionBlocState> {
     on<DeleteSession>(_onDelete);
   }
 
-  Future<void> _onLoad(LoadSessions e, Emitter<SessionBlocState> emit) async {
+  Future<void> _onLoad(LoadSessions e, Emitter<SessionState> emit) async {
     emit(SessionsLoading());
     try {
       final sessions = await _repo.getAll(
@@ -97,12 +96,12 @@ class SessionBloc extends Bloc<SessionEvent, SessionBlocState> {
     }
   }
 
-  Future<void> _onSave(SaveSession e, Emitter<SessionBlocState> emit) async {
+  Future<void> _onSave(SaveSession e, Emitter<SessionState> emit) async {
     await _repo.save(e.session);
     add(const LoadSessions()); // reload
   }
 
-  Future<void> _onDelete(DeleteSession e, Emitter<SessionBlocState> emit) async {
+  Future<void> _onDelete(DeleteSession e, Emitter<SessionState> emit) async {
     await _repo.delete(e.sessionId);
     add(const LoadSessions());
   }

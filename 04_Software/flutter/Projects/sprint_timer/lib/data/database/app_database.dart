@@ -23,13 +23,14 @@ class Sessions extends Table {
   TextColumn get sessionId => text()();
   IntColumn get athleteId => integer()();
   DateTimeColumn get datetimeStart => dateTime()();
-  RealColumn get distanceMeters => real()();
+  IntColumn get distanceMeters => integer()();
   IntColumn get timeMs => integer()();
   RealColumn get avgSpeedMps => real()();
   RealColumn get avgSpeedKmh => real()();
-  IntColumn get bpmFinish => integer()();
-  IntColumn get bpmRecovery => integer()();
-  BoolColumn get distanceCalibrated => boolean().withDefault(const Constant(true))();
+  RealColumn get hrAvgRun => real()();
+  RealColumn get hrMaxRun => real()();
+  RealColumn get hrAvgRecovery => real()();
+  RealColumn get hrMaxRecovery => real()();
   RealColumn get ecv => real()();
   TextColumn get notes => text().nullable()();
   TextColumn get deviceRaceId => text().nullable()();
@@ -73,7 +74,7 @@ class AppDatabase extends _$AppDatabase {
   // ── Sessions ─────────────────────────
   Future<List<Session>> querySessions({
     int? athleteId,
-    double? distance,
+    int? distance,
     DateTime? from,
     DateTime? to,
   }) {
@@ -99,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteSession(String id) =>
       (delete(sessions)..where((t) => t.sessionId.equals(id))).go();
 
-  Future<Session?> getPersonalRecord(int athleteId, double distance) async {
+  Future<Session?> getPersonalRecord(int athleteId, int distance) async {
     final q = select(sessions)
       ..where((t) => t.athleteId.equals(athleteId) & t.distanceMeters.equals(distance))
       ..orderBy([(t) => OrderingTerm.asc(t.timeMs)])
@@ -117,6 +118,8 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    return driftDatabase(name: 'sprint_timer');
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'sprint_timer.db'));
+    return driftDatabase(file: file);
   });
 }

@@ -1,5 +1,5 @@
-name: treximo
-description: App Oficial del Sistema Tréximo (Cronómetro Inteligente)
+name: sprint_timer
+description: Cronómetro Inteligente de Atletismo
 publish_to: 'none'
 version: 1.0.0+1
 

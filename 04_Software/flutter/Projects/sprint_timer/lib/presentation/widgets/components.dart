@@ -176,7 +176,7 @@ class SessionTile extends StatelessWidget {
                     ],
                   ]),
                   const SizedBox(height: 3),
-                  Text('$dateStr · ${session.bpmFinish} BPM · ECV ${session.ecv.toStringAsFixed(3)}',
+                  Text('$dateStr · ${session.hrAvgRun.round()} BPM · ECV ${session.ecv.toStringAsFixed(3)}',
                       style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
                 ],
               ),
@@ -200,10 +200,10 @@ class SessionTile extends StatelessWidget {
 // ─────────────────────────────────────────
 class FilterBar extends StatelessWidget {
   final int? selectedAthleteId;
-  final double? selectedDistance;
+  final int? selectedDistance;
   final List<({int id, String name})> athletes;
   final ValueChanged<int?> onAthleteChanged;
-  final ValueChanged<double?> onDistanceChanged;
+  final ValueChanged<int?> onDistanceChanged;
   final VoidCallback? onClearFilters;
 
   const FilterBar({
@@ -278,15 +278,14 @@ class FilterBar extends StatelessWidget {
               title: const Text('Todos', style: TextStyle(color: AppColors.textPrimary)),
               onTap: () { Navigator.pop(context); onAthleteChanged(null); },
             ),
-            for (final a in athletes)
-              ListTile(
-                title: Text(a.name, style: const TextStyle(color: AppColors.textPrimary)),
-                subtitle: Text('#${a.id}', style: const TextStyle(color: AppColors.textTertiary)),
-                trailing: selectedAthleteId == a.id
-                    ? const Icon(Icons.check, color: AppColors.cyan)
-                    : null,
-                onTap: () { Navigator.pop(context); onAthleteChanged(a.id); },
-              ),
+            ...athletes.map((a) => ListTile(
+              title: Text(a.name, style: const TextStyle(color: AppColors.textPrimary)),
+              subtitle: Text('#${a.id}', style: const TextStyle(color: AppColors.textTertiary)),
+              trailing: selectedAthleteId == a.id
+                  ? const Icon(Icons.check, color: AppColors.cyan)
+                  : null,
+              onTap: () { Navigator.pop(context); onAthleteChanged(a.id); },
+            )),
           ],
         ),
       ),
@@ -307,21 +306,12 @@ class FilterBar extends StatelessWidget {
             const Text('Filtrar por distancia',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
             const SizedBox(height: 12),
-            ListTile(
-              title: const Text('Todas', style: TextStyle(color: AppColors.textPrimary)),
-              trailing: selectedDistance == null ? const Icon(Icons.check, color: AppColors.cyan) : null,
-              onTap: () { Navigator.pop(context); onDistanceChanged(null); },
-            ),
-            ListTile(
-              title: const Text('50.0m', style: TextStyle(color: AppColors.textPrimary)),
-              trailing: selectedDistance == 50.0 ? const Icon(Icons.check, color: AppColors.cyan) : null,
-              onTap: () { Navigator.pop(context); onDistanceChanged(50.0); },
-            ),
-            ListTile(
-              title: const Text('100.0m', style: TextStyle(color: AppColors.textPrimary)),
-              trailing: selectedDistance == 100.0 ? const Icon(Icons.check, color: AppColors.cyan) : null,
-              onTap: () { Navigator.pop(context); onDistanceChanged(100.0); },
-            ),
+            ...[null, 50, 100].map((d) => ListTile(
+              title: Text(d == null ? 'Todas' : '${d}m',
+                  style: const TextStyle(color: AppColors.textPrimary)),
+              trailing: selectedDistance == d ? const Icon(Icons.check, color: AppColors.cyan) : null,
+              onTap: () { Navigator.pop(context); onDistanceChanged(d); },
+            )),
           ],
         ),
       ),

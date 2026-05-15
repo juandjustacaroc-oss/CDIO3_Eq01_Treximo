@@ -12,7 +12,7 @@ class InMemorySessionRepository implements SessionRepository {
   @override
   Future<List<Session>> getAll({
     int? athleteId,
-    double? distanceMeters,
+    int? distanceMeters,
     DateTime? from,
     DateTime? to,
   }) async {
@@ -41,7 +41,7 @@ class InMemorySessionRepository implements SessionRepository {
       _sessions.removeWhere((s) => s.sessionId == sessionId);
 
   @override
-  Future<Session?> getPersonalRecord(int athleteId, double distanceMeters) async {
+  Future<Session?> getPersonalRecord(int athleteId, int distanceMeters) async {
     final filtered = _sessions
         .where((s) => s.athleteId == athleteId && s.distanceMeters == distanceMeters)
         .toList()
@@ -50,7 +50,7 @@ class InMemorySessionRepository implements SessionRepository {
   }
 
   @override
-  Future<List<Session>> getRecentSessions(int athleteId, double distanceMeters,
+  Future<List<Session>> getRecentSessions(int athleteId, int distanceMeters,
       {int limit = 5}) async {
     final filtered = _sessions
         .where((s) => s.athleteId == athleteId && s.distanceMeters == distanceMeters)
@@ -98,10 +98,11 @@ class InMemoryHrRepository implements HrSampleRepository {
           timeMs: 11000,
           avgSpeedMps: 9.0,
           avgSpeedKmh: 32.4,
-          bpmFinish: 185,
-          bpmRecovery: 130,
-          distanceCalibrated: true,
-          ecv: 6.85,
+          hrAvgRun: 168,
+          hrMaxRun: 185,
+          hrAvgRecovery: 120,
+          hrMaxRecovery: 145,
+          ecv: 0.054,
         ),
       );
 

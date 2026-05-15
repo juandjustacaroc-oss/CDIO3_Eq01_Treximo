@@ -36,10 +36,11 @@ List<Session> generateMockSessions() {
       timeMs: t,
       avgSpeedMps: speedMps,
       avgSpeedKmh: speedMps * 3.6,
-      bpmFinish: (hr + 12 + _rng.nextInt(8)).round(),
-      bpmRecovery: (hr - 15 - _rng.nextInt(10)).round(),
-      distanceCalibrated: true,
-      ecv: 6.07 / (hr + 12),
+      hrAvgRun: hr,
+      hrMaxRun: hr + 12 + _rng.nextDouble() * 8,
+      hrAvgRecovery: 110 + _rng.nextDouble() * 20,
+      hrMaxRecovery: 140 + _rng.nextDouble() * 10,
+      ecv: speedMps / hr,
       isPR: i == carloBests100.length - 1,
       deviceRaceId: 'R${100 + i}',
     ));
@@ -59,10 +60,11 @@ List<Session> generateMockSessions() {
       timeMs: t,
       avgSpeedMps: speedMps,
       avgSpeedKmh: speedMps * 3.6,
-      bpmFinish: (hr + 10).round(),
-      bpmRecovery: (hr - 20).round(),
-      distanceCalibrated: true,
-      ecv: 7.15 / (hr + 2),
+      hrAvgRun: hr,
+      hrMaxRun: hr + 10,
+      hrAvgRecovery: 105,
+      hrMaxRecovery: 130,
+      ecv: speedMps / hr,
       isPR: i == carlos50.length - 1,
     ));
   }
@@ -81,10 +83,11 @@ List<Session> generateMockSessions() {
       timeMs: t,
       avgSpeedMps: speedMps,
       avgSpeedKmh: speedMps * 3.6,
-      bpmFinish: (hr + 15).round(),
-      bpmRecovery: (hr - 12).round(),
-      distanceCalibrated: true,
-      ecv: 6.80 / (hr + 5),
+      hrAvgRun: hr,
+      hrMaxRun: hr + 14,
+      hrAvgRecovery: 118,
+      hrMaxRecovery: 145,
+      ecv: speedMps / hr,
       isPR: i == maria50.length - 1,
     ));
   }
@@ -103,10 +106,11 @@ List<Session> generateMockSessions() {
       timeMs: t,
       avgSpeedMps: speedMps,
       avgSpeedKmh: speedMps * 3.6,
-      bpmFinish: (hr + 15).round(),
-      bpmRecovery: (hr - 10).round(),
-      distanceCalibrated: true,
-      ecv: 5.80 / (hr + 5),
+      hrAvgRun: hr,
+      hrMaxRun: hr + 15,
+      hrAvgRecovery: 120,
+      hrMaxRecovery: 150,
+      ecv: speedMps / hr,
       isPR: i == maria100.length - 1,
     ));
   }
@@ -125,10 +129,11 @@ List<Session> generateMockSessions() {
       timeMs: t,
       avgSpeedMps: speedMps,
       avgSpeedKmh: speedMps * 3.6,
-      bpmFinish: (hr + 16).round(),
-      bpmRecovery: (hr - 10).round(),
-      distanceCalibrated: true,
-      ecv: 5.50 / (hr + 5),
+      hrAvgRun: hr,
+      hrMaxRun: hr + 16,
+      hrAvgRecovery: 125,
+      hrMaxRecovery: 155,
+      ecv: speedMps / hr,
       isPR: i == juan50.length - 1,
     ));
   }
@@ -145,7 +150,7 @@ List<HrSample> generateHrSamples(Session session) {
   // RUN phase (cada 500ms)
   for (int ms = 0; ms < runDuration; ms += 500) {
     final progress = ms / runDuration;
-    final bpm = (session.bpmFinish * 0.7 + session.bpmFinish * 0.3 * progress +
+    final bpm = (session.hrAvgRun * 0.7 + session.hrAvgRun * 0.3 * progress +
         (_rng.nextDouble() - 0.5) * 6).round();
     samples.add(HrSample(sessionId: session.sessionId, offsetMs: ms, bpm: bpm, phase: HrPhase.run));
   }
@@ -153,8 +158,8 @@ List<HrSample> generateHrSamples(Session session) {
   // RECOVERY phase (cada 1000ms)
   for (int ms = 0; ms < recoveryDuration; ms += 1000) {
     final progress = ms / recoveryDuration;
-    final bpm = (session.bpmFinish * (1 - progress * 0.5) +
-        _rng.nextDouble() * 5).round();
+    final bpm = (session.hrMaxRun * (1 - progress * 0.5) +
+        (_rng.nextDouble() - 0.5) * 8).round();
     samples.add(HrSample(sessionId: session.sessionId, offsetMs: runDuration + ms, bpm: bpm, phase: HrPhase.recovery));
   }
 

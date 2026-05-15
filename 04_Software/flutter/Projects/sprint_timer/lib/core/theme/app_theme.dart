@@ -7,18 +7,16 @@ class AppColors {
   static const surfaceHigh = Color(0xFF242938);
 
   // Accents semanticos
+  static const cyan = Color(0xFF00E5FF);       // Tiempo, velocidad
   static const red = Color(0xFFFF4C6A);        // HR / frecuencia cardíaca
   static const violet = Color(0xFFA78BFA);     // ECV / eficiencia cardiovascular
   static const green = Color(0xFF34D399);      // PR, estado OK, mejora
   static const amber = Color(0xFFFBBF24);      // Advertencia, recuperación
+
   // Texto
   static const textPrimary = Color(0xFFE8EAF0);
   static const textSecondary = Color(0xFF8892AA);
   static const textTertiary = Color(0xFF5A6080);
-
-  // Brand Acents
-  static const Color cyan = Color(0xFF66FCF1); // Primary neon
-  static const Color cyanDim = Color(0xFF45A29E);
 
   // Borders
   static const border = Color(0xFF252A3A);

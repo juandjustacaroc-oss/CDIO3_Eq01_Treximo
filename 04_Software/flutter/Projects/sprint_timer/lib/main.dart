@@ -3,59 +3,36 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
-import 'data/database/app_database.dart';
-import 'data/repositories/drift_repositories.dart';
-import 'data/datasources/http_datasource.dart';
 import 'data/datasources/mock_datasource.dart';
+import 'data/repositories/in_memory_repositories.dart';
 import 'domain/entities/entities.dart';
-import 'domain/repositories/repositories.dart';
 import 'presentation/blocs/session_bloc.dart';
 import 'presentation/blocs/live_session_bloc.dart';
-import 'presentation/blocs/athlete_bloc.dart';
 import 'presentation/screens/screens_a.dart';
 import 'presentation/screens/screens_b.dart';
-import 'presentation/screens/screens_c.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final db = AppDatabase();
-  final sessionRepo = DriftSessionRepository(db);
-  final athleteRepo = DriftAthleteRepository(db);
-
-  // Seed mock athletes if db is empty
-  final athletes = await athleteRepo.getAll();
-  if (athletes.isEmpty) {
-    for (var a in mockAthletes) {
-      await athleteRepo.save(a);
-    }
-    final mockSessions = generateMockSessions();
-    for (var s in mockSessions) {
-      await sessionRepo.save(s);
-    }
-  }
-
-  // Por defecto arrancamos con Mock. Cambia a HttpSportDataSource() para Real!
+void main() {
+  final sessions = generateMockSessions();
+  final sessionRepo = InMemorySessionRepository(sessions);
   final dataSource = MockSportDataSource();
-  // final dataSource = HttpSportDataSource(port: 8080);
 
   runApp(MyApp(
     sessionRepo: sessionRepo,
-    athleteRepo: athleteRepo,
     dataSource: dataSource,
+    sessions: sessions,
   ));
 }
 
 class MyApp extends StatelessWidget {
-  final SessionRepository sessionRepo;
-  final AthleteRepository athleteRepo;
-  final SportDataSource dataSource;
+  final InMemorySessionRepository sessionRepo;
+  final MockSportDataSource dataSource;
+  final List<Session> sessions;
 
   MyApp({
     super.key,
     required this.sessionRepo,
-    required this.athleteRepo,
     required this.dataSource,
+    required this.sessions,
   });
 
   late final GoRouter router = GoRouter(
@@ -82,6 +59,7 @@ class MyApp extends StatelessWidget {
           final id = state.pathParameters['id']!;
           return SessionDetailScreen(
             sessionId: id,
+            allSessions: sessions,
           );
         },
       ),
@@ -91,6 +69,7 @@ class MyApp extends StatelessWidget {
           final id = int.parse(state.pathParameters['id']!);
           return AthleteDetailScreen(
             athleteId: id,
+            allSessions: sessions,
           );
         },
       ),
@@ -102,18 +81,6 @@ class MyApp extends StatelessWidget {
         path: '/connection',
         builder: (context, state) => const ConnectionScreen(),
       ),
-      GoRoute(
-        path: '/about',
-        builder: (context, state) => const AboutTreximoPage(),
-      ),
-      GoRoute(
-        path: '/how-it-works',
-        builder: (context, state) => const HowItWorksPage(),
-      ),
-      GoRoute(
-        path: '/manual',
-        builder: (context, state) => const UserManualPage(),
-      ),
     ],
   );
 
@@ -121,9 +88,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) => AthleteBloc(athleteRepo)..add(LoadAthletes()),
-        ),
         BlocProvider(
           create: (_) => SessionBloc(sessionRepo)..add(const LoadSessions()),
         ),

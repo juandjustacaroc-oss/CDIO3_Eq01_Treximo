@@ -16,7 +16,7 @@ abstract class AthleteRepository {
 abstract class SessionRepository {
   Future<List<Session>> getAll({
     int? athleteId,
-    double? distanceMeters,
+    int? distanceMeters,
     DateTime? from,
     DateTime? to,
   });
@@ -25,10 +25,10 @@ abstract class SessionRepository {
   Future<void> delete(String sessionId);
 
   /// Devuelve el mejor tiempo (PR) del atleta para una distancia.
-  Future<Session?> getPersonalRecord(int athleteId, double distanceMeters);
+  Future<Session?> getPersonalRecord(int athleteId, int distanceMeters);
 
   /// Devuelve los N deltas de ECV de las últimas sesiones anteriores.
-  Future<List<Session>> getRecentSessions(int athleteId, double distanceMeters, {int limit = 5});
+  Future<List<Session>> getRecentSessions(int athleteId, int distanceMeters, {int limit = 5});
 }
 
 // ─────────────────────────────────────────

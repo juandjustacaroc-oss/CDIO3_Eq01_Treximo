@@ -148,21 +148,20 @@ class LiveSessionBloc extends Bloc<LiveEvent, LiveState> {
       final speedMps = (dist * 1000) / elapsed;
       final hrRun = _hrRunSamples.isEmpty ? 165.0 : _hrRunSamples.reduce((a, b) => a + b) / _hrRunSamples.length;
       final hrMax = _hrRunSamples.isEmpty ? 185.0 : _hrRunSamples.reduce((a, b) => a > b ? a : b).toDouble();
-      final hrRecovery = _hrRecoverySamples.isEmpty ? 130.0 : _hrRecoverySamples.reduce((a, b) => a + b) / _hrRecoverySamples.length;
-      final ecv = speedMps / hrMax;
 
       final session = e.Session(
         sessionId: _uuid.v4(),
         athleteId: state.selectedAthlete!.athleteId,
         datetimeStart: DateTime.fromMillisecondsSinceEpoch(_startEpoch),
-        distanceMeters: dist,
+        distanceMeters: state.selectedDistance,
         timeMs: elapsed,
         avgSpeedMps: speedMps,
         avgSpeedKmh: speedMps * 3.6,
-        bpmFinish: hrMax.round(),
-        bpmRecovery: hrRecovery.round(),
-        distanceCalibrated: true,
-        ecv: ecv,
+        hrAvgRun: hrRun,
+        hrMaxRun: hrMax,
+        hrAvgRecovery: 0,
+        hrMaxRecovery: 0,
+        ecv: speedMps / hrRun,
       );
 
       await _sessionRepo.save(session);

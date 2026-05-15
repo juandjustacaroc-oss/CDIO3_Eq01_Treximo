@@ -9,9 +9,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/entities.dart';
 import '../../data/datasources/mock_datasource.dart';
-import '../blocs/session_bloc.dart';
+import '../blocs/session_bloc.dart' hide SessionState;
 import '../blocs/live_session_bloc.dart';
-import '../blocs/athlete_bloc.dart' as import_athlete_bloc;
 import '../widgets/components.dart';
 
 // ─────────────────────────────────────────
@@ -19,10 +18,12 @@ import '../widgets/components.dart';
 // ─────────────────────────────────────────
 class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
+  final List<Session> allSessions;
 
   const SessionDetailScreen({
     super.key,
     required this.sessionId,
+    required this.allSessions,
   });
 
   @override
@@ -34,34 +35,13 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   late List<HrSample> hrSamples;
   late List<Session> previous;
   late String athleteName;
-  bool _initialized = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialized) return;
-    _initialized = true;
-    final sessionBloc = context.read<SessionBloc>();
-    final allSessions = sessionBloc.state is SessionsLoaded 
-        ? (sessionBloc.state as SessionsLoaded).sessions 
-        : <Session>[];
-        
-    final found = allSessions.where((s) => s.sessionId == widget.sessionId).firstOrNull;
-    session = found ?? Session(
-      sessionId: widget.sessionId,
-      athleteId: 0,
-      datetimeStart: DateTime.now(),
-      distanceMeters: 100,
-      timeMs: 0,
-      avgSpeedMps: 0,
-      avgSpeedKmh: 0,
-      bpmFinish: 0,
-      bpmRecovery: 0,
-      distanceCalibrated: false,
-      ecv: 0,
-    );
+  void initState() {
+    super.initState();
+    session = widget.allSessions.firstWhere((s) => s.sessionId == widget.sessionId);
     hrSamples = generateHrSamples(session);
-    previous = allSessions
+    previous = widget.allSessions
         .where((s) =>
             s.athleteId == session.athleteId &&
             s.distanceMeters == session.distanceMeters &&
@@ -152,11 +132,11 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   trend: hasPrev ? _trend(session.avgSpeedMps, previous.first.avgSpeedMps) : null,
                 ),
                 MetricCard(
-                  label: 'BPM Final',
-                  value: '${session.bpmFinish} BPM',
-                  subtitle: 'Al cruzar meta',
+                  label: 'FC promedio',
+                  value: '${session.hrAvgRun.round()} BPM',
+                  subtitle: 'máx ${session.hrMaxRun.round()} BPM',
                   accentColor: AppColors.red,
-                  trend: hasPrev ? _trend(session.bpmFinish.toDouble(), previous.first.bpmFinish.toDouble(), higherIsBetter: false) : null,
+                  trend: hasPrev ? _trend(session.hrAvgRun, previous.first.hrAvgRun, higherIsBetter: false) : null,
                   trendColor: AppColors.green,
                 ),
                 MetricCard(
@@ -167,9 +147,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   trend: hasPrev ? _trend(session.ecv, previous.first.ecv) : null,
                 ),
                 MetricCard(
-                  label: 'BPM Recuperación',
-                  value: '${session.bpmRecovery} BPM',
-                  subtitle: 'A los 60s',
+                  label: 'FC recuperación',
+                  value: '${session.hrAvgRecovery.round()} BPM',
+                  subtitle: 'máx ${session.hrMaxRecovery.round()}',
                   accentColor: AppColors.amber,
                 ),
               ],
@@ -216,10 +196,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
 
   Future<void> _exportCsv() async {
     final csv = StringBuffer();
-    csv.writeln('sessionId,athleteId,fecha,distancia,timeMs,tiempo,velocidadKmh,velocidadMps,bpmFinish,bpmRecovery,ecv,isPR');
+    csv.writeln('sessionId,athleteId,fecha,distancia,timeMs,tiempo,velocidadKmh,velocidadMps,hrAvgRun,hrMaxRun,hrAvgRecovery,ecv,isPR');
     final s = session;
     csv.writeln(
-        '${s.sessionId},${s.athleteId},${s.datetimeStart.toIso8601String()},${s.distanceMeters},${s.timeMs},${s.timeFormatted},${s.avgSpeedKmh.toStringAsFixed(2)},${s.avgSpeedMps.toStringAsFixed(3)},${s.bpmFinish},${s.bpmRecovery},${s.ecv.toStringAsFixed(4)},${s.isPR}');
+        '${s.sessionId},${s.athleteId},${s.datetimeStart.toIso8601String()},${s.distanceMeters},${s.timeMs},${s.timeFormatted},${s.avgSpeedKmh.toStringAsFixed(2)},${s.avgSpeedMps.toStringAsFixed(3)},${s.hrAvgRun.toStringAsFixed(1)},${s.hrMaxRun.toStringAsFixed(1)},${s.hrAvgRecovery.toStringAsFixed(1)},${s.ecv.toStringAsFixed(4)},${s.isPR}');
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/sesion_${s.sessionId.substring(0, 8)}.csv');
     await file.writeAsString(csv.toString());
@@ -432,120 +412,117 @@ class _CompareRow extends StatelessWidget {
 // ─────────────────────────────────────────
 class AthleteDetailScreen extends StatelessWidget {
   final int athleteId;
+  final List<Session> allSessions;
 
   const AthleteDetailScreen({
     super.key,
     required this.athleteId,
+    required this.allSessions,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SessionBloc, SessionBlocState>(
-      builder: (context, sessionState) {
-        List<Session> allSessions = [];
-        if (sessionState is SessionsLoaded) {
-          allSessions = sessionState.sessions;
-        }
+    final athlete = mockAthletes.firstWhere(
+      (a) => a.athleteId == athleteId,
+      orElse: () => Athlete(athleteId: athleteId, name: '#$athleteId'),
+    );
+    final sessions = allSessions
+        .where((s) => s.athleteId == athleteId)
+        .toList()
+      ..sort((a, b) => b.datetimeStart.compareTo(a.datetimeStart));
 
-        final athleteState = context.read<import_athlete_bloc.AthleteBloc>().state;
-        Athlete athlete = Athlete(athleteId: athleteId, name: '#$athleteId');
-        if (athleteState is import_athlete_bloc.AthletesLoaded) {
-          final found = athleteState.athletes.where((a) => a.athleteId == athleteId).firstOrNull;
-          if (found != null) athlete = found;
-        }
+    final pr100 = sessions
+        .where((s) => s.distanceMeters == 100)
+        .toList()
+      ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
+    final pr50 = sessions
+        .where((s) => s.distanceMeters == 50)
+        .toList()
+      ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
 
-        final sessions = allSessions
-            .where((s) => s.athleteId == athleteId)
-            .toList()
-          ..sort((a, b) => b.datetimeStart.compareTo(a.datetimeStart));
-
-        final pr100 = sessions
-            .where((s) => s.distanceMeters == 100)
-            .toList()
-          ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
-        final pr50 = sessions
-            .where((s) => s.distanceMeters == 50)
-            .toList()
-          ..sort((a, b) => a.timeMs.compareTo(b.timeMs));
-
-        return Scaffold(
-          backgroundColor: AppColors.bg,
-          appBar: AppBar(
-            title: Text(athlete.name),
-            backgroundColor: AppColors.bg,
-            foregroundColor: AppColors.textPrimary,
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        title: Text(athlete.name),
+        backgroundColor: AppColors.bg,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Athlete avatar + stats
+            Row(
               children: [
-                Row(
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.violet.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text('#$athleteId',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.violet)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppColors.violet.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text('#$athleteId',
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.violet)),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(athlete.name,
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                        if (athlete.notes != null)
-                          Text(athlete.notes!,
-                              style: const TextStyle(fontSize: 13, color: AppColors.textTertiary)),
-                        Text('${sessions.length} sesiones registradas',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
-                      ],
-                    ),
+                    Text(athlete.name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                    if (athlete.notes != null)
+                      Text(athlete.notes!,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textTertiary)),
+                    Text('${sessions.length} sesiones registradas',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    if (pr100.isNotEmpty) _PRCard(distance: '100m', session: pr100.first),
-                    if (pr100.isNotEmpty && pr50.isNotEmpty) const SizedBox(width: 10),
-                    if (pr50.isNotEmpty) _PRCard(distance: '50m', session: pr50.first),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Text('Últimas 5 sesiones',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                const SizedBox(height: 12),
-                for (final s in sessions.take(5))
-                  SessionTile(
-                    session: s,
-                    athleteName: athlete.name,
-                    onTap: () => context.push('/session/${s.sessionId}'),
-                  ),
-                if (sessions.length > 5) ...[
-                  const SizedBox(height: 8),
-                  Center(
-                    child: TextButton(
-                      onPressed: () => context.push('/history'),
-                      child: const Text('Ver todo el historial',
-                          style: TextStyle(color: AppColors.cyan)),
-                    ),
-                  ),
-                ],
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 20),
+
+            // PR chips
+            Row(
+              children: [
+                if (pr100.isNotEmpty)
+                  _PRCard(distance: '100m', session: pr100.first),
+                if (pr100.isNotEmpty && pr50.isNotEmpty) const SizedBox(width: 10),
+                if (pr50.isNotEmpty)
+                  _PRCard(distance: '50m', session: pr50.first),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Últimas 5 sesiones',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            const SizedBox(height: 12),
+
+            ...sessions.take(5).map((s) => SessionTile(
+              session: s,
+              athleteName: athlete.name,
+              onTap: () => context.push('/session/${s.sessionId}'),
+            )),
+
+            if (sessions.length > 5) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(
+                  onPressed: () => context.push('/history'),
+                  child: const Text('Ver todo el historial',
+                      style: TextStyle(color: AppColors.cyan)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -626,37 +603,34 @@ class NewSessionScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 13, color: AppColors.textTertiary)),
                 const SizedBox(height: 8),
                 Row(
-                  children: [
-                    for (final d in [50, 100])
-                      Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: GestureDetector(
-                          onTap: () => context.read<LiveSessionBloc>().add(LiveSelectDistance(d)),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: state.selectedDistance == d
-                                  ? AppColors.cyan.withValues(alpha: 0.15)
-                                  : AppColors.surface,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: state.selectedDistance == d
-                                    ? AppColors.cyan
-                                    : AppColors.border,
-                                width: state.selectedDistance == d ? 1.5 : 0.5,
-                              ),
-                            ),
-                            child: Text('${d}m',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: state.selectedDistance == d
-                                        ? AppColors.cyan
-                                        : AppColors.textSecondary)),
+                  children: [50, 100].map((d) => Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: GestureDetector(
+                      onTap: () => context.read<LiveSessionBloc>().add(LiveSelectDistance(d)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: state.selectedDistance == d
+                              ? AppColors.cyan.withOpacity(0.15)
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: state.selectedDistance == d
+                                ? AppColors.cyan
+                                : AppColors.border,
+                            width: state.selectedDistance == d ? 1.5 : 0.5,
                           ),
                         ),
+                        child: Text('${d}m',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: state.selectedDistance == d
+                                    ? AppColors.cyan
+                                    : AppColors.textSecondary)),
                       ),
-                  ],
+                    ),
+                  )).toList(),
                 ),
                 const SizedBox(height: 30),
 
@@ -748,23 +722,22 @@ class _AthleteSelector extends StatelessWidget {
               const Text('Seleccionar atleta',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: AppColors.textPrimary)),
               const SizedBox(height: 12),
-              for (final a in mockAthletes)
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.violet.withValues(alpha: 0.15),
-                    child: Text('#${a.athleteId}',
-                        style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.w700, fontSize: 13)),
-                  ),
-                  title: Text(a.name, style: const TextStyle(color: AppColors.textPrimary)),
-                  subtitle: Text(a.notes ?? '', style: const TextStyle(color: AppColors.textTertiary)),
-                  trailing: selected?.athleteId == a.athleteId
-                      ? const Icon(Icons.check, color: AppColors.cyan)
-                      : null,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.read<LiveSessionBloc>().add(LiveSelectAthlete(a));
-                  },
+              ...mockAthletes.map((a) => ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.violet.withOpacity(0.15),
+                  child: Text('#${a.athleteId}',
+                      style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
+                title: Text(a.name, style: const TextStyle(color: AppColors.textPrimary)),
+                subtitle: Text(a.notes ?? '', style: const TextStyle(color: AppColors.textTertiary)),
+                trailing: selected?.athleteId == a.athleteId
+                    ? const Icon(Icons.check, color: AppColors.cyan)
+                    : null,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.read<LiveSessionBloc>().add(LiveSelectAthlete(a));
+                },
+              )),
             ],
           ),
         ),
@@ -832,7 +805,7 @@ class _SessionStatusDisplay extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isRunning ? AppColors.cyan.withValues(alpha: 0.4) : AppColors.border,
+          color: isRunning ? AppColors.cyan.withOpacity(0.4) : AppColors.border,
           width: isRunning ? 1.5 : 0.5,
         ),
       ),
