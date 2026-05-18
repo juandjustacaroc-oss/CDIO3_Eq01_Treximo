@@ -16,7 +16,7 @@ Desarrollar un sistema portátil y autónomo capaz de:
 - Peon Salida/Peon Llegada.
 - Cerebro Cronometro.
 - Banda de variables fisiologicas.
-La comunicación entre nodos se realiza mediante ESP-NOW, garantizando baja latencia y operación sin router.
+La comunicación entre nodos se realiza mediante ESP-NOW.
 El nodo central también opera como punto de acceso WiFi para permitir la visualización de datos desde un smartphone o tablet.
 
 # Estado Actual [MAHD](https://docs.google.com/spreadsheets/d/1o7weHOlPSlPQWPbzmIAxRxXA6ihxt1Q-x_elVm5SotQ/edit?usp=sharing) 
