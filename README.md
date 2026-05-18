@@ -20,12 +20,12 @@ La comunicación entre nodos se realiza mediante ESP-NOW, garantizando baja late
 El nodo central también opera como punto de acceso WiFi para permitir la visualización de datos desde un smartphone o tablet.
 
 # Estado Actual
-- ❌Hardware funcional
+- ✅Hardware funcional
 - ✅Comunicación estable entre nodos
 - ✅Cronometría precisa basada en eventos
 - ❌Monitoreo cardíaco integrado
 - ✅Interfaz TFT operativa
-- ❌Dashboard web ligero en pruebas
+- ✅Dashboard web ligero en pruebas
 
 # Librerías necesarias
 
