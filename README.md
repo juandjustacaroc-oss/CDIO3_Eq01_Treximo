@@ -19,7 +19,7 @@ Desarrollar un sistema portátil y autónomo capaz de:
 La comunicación entre nodos se realiza mediante ESP-NOW, garantizando baja latencia y operación sin router.
 El nodo central también opera como punto de acceso WiFi para permitir la visualización de datos desde un smartphone o tablet.
 
-# Estado Actual [LINK MAHD](https://docs.google.com/spreadsheets/d/1o7weHOlPSlPQWPbzmIAxRxXA6ihxt1Q-x_elVm5SotQ/edit?usp=sharing) 
+# Estado Actual [MAHD](https://docs.google.com/spreadsheets/d/1o7weHOlPSlPQWPbzmIAxRxXA6ihxt1Q-x_elVm5SotQ/edit?usp=sharing) 
 - ✅Hardware funcional
 - ✅Comunicación estable entre nodos
 - ✅Cronometría precisa basada en eventos
