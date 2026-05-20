@@ -20,7 +20,7 @@ El firmware implementa:
 | Peón salida | Detecta salida mediante HC-SR04 y envía evento `START` | `Peon_Salida_*.ino` |
 | Peón llegada | Detecta llegada mediante HC-SR04 y envía evento `FINISH` | `Peon_Llegada_*.ino` |
 | Simulador ESP32 | Genera carreras aleatorias para pruebas de backend/app | `ESP32_Treximo_Simulador_*.ino` |
-| Banda HR | Evaluada durante desarrollo; retirada del PMV | Archivo histórico opcional |
+| Banda HR | Evaluada durante desarrollo; retirada del PMV | SIN ARCHIVO |
 
 ---
 
