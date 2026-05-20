@@ -69,7 +69,7 @@ UWB TAG/ANCHOR ─ distancia
 
 ## Librerías externas
 
-Instalar desde Library Manager o mediante ZIP.
+Instalar desde Library Manager o mediante ZIP, también se encuentran alojadas en el repositorio.
 
 | Librería | Uso |
 |---|---|
