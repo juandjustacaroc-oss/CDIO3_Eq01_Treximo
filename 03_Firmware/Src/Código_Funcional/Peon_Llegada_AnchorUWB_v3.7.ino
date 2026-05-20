@@ -1,13 +1,11 @@
 /*
-  PEÓN DE LLEGADA - v3.6
+  PEÓN DE LLEGADA - v3.7
   ANCHOR UWB + HC-SR04 POR INTERRUPCIÓN + ESP-NOW
 
-  Objetivo de esta versión:
-  - Usar exactamente la misma lógica rápida de ultrasonido y LED del peón de salida.
-  - El LED indica presencia en tiempo real: encendido si detecta dentro del rango, apagado si no.
-  - No usa pulseIn() ni delay() en el funcionamiento normal.
-  - Mantiene el UWB como ANCHOR.
-  - Envía MSG_FINISH al cerebro.
+  Cambio principal:
+  - La lógica de HC-SR04 y LED fue igualada a la del peón de salida.
+  - Se usa el mismo umbral, temporización, ISR, LED con esp_timer y parpadeo de confirmación.
+  - Mantiene UWB como ANCHOR y envía MSG_FINISH al cerebro.
 
   Hardware:
   - ESP32
@@ -33,6 +31,7 @@
 #include <SPI.h>
 #include <math.h>
 #include <string.h>
+#include <esp_timer.h>
 #include <driver/gpio.h>
 #include "DW1000Ranging.h"
 
@@ -53,16 +52,15 @@ const uint8_t PIN_SS  = 4;
 // ================= CONFIG =================
 #define ESPNOW_CHANNEL 1
 
-// Misma lógica de detección usada en salida.
-// Se detecta al usuario hasta 1 metro.
-static const float UMBRAL_MIN_CM = 2.0f;
-static const float UMBRAL_MAX_CM = 100.0f;
-static const uint32_t debounce_ms = 1500UL;
+// Misma configuración del peón de salida.
+static const float umbral_cm = 40.0f;
+static const uint32_t debounce_ms = 1500;
 static const uint8_t nLecturasConfirmar = 1;
 
-// 10000 us cubre aprox. 1.7 m, suficiente para detectar 1 m sin esperar demasiado.
 static const uint32_t US_PERIOD_MS  = 25UL;
-static const uint32_t US_TIMEOUT_US = 10000UL;
+static const uint32_t US_TIMEOUT_US = 10000UL;  // suficiente para >1 m, sin bloquear
+
+static const uint64_t LED_HALF_PERIOD_US = 80000ULL;
 
 // Evita que el anchor sature Serial y retrase el loop.
 #define DEBUG_UWB_ANCHOR 0
@@ -111,34 +109,94 @@ typedef struct __attribute__((packed)) {
 static uint16_t msgId = 0;
 static uint32_t ultimaDet_ms = 0;
 static uint8_t bajoUmbralCount = 0;
-static bool ultimoEstadoDetectado = false;
 
 // ================= DECLARACIONES =================
 void enviarFinish(float distancia_cm);
 void enviarEventoPeon(float distancia_cm);
 
-// ================= LED DIRECTO POR PRESENCIA =================
+// ================= LED SIN BLOQUEO =================
 /*
-  Misma filosofía que salida:
-  - LED encendido = presencia dentro del rango.
-  - LED apagado = sin presencia válida.
-  - No se usa parpadeo, porque el parpadeo puede ocultar la detección real.
+  LED v3.4:
+  - El LED se enciende inmediatamente cuando el HC-SR04 detecta presencia bajo el umbral.
+  - El parpadeo de confirmación del evento se hace con esp_timer, sin delay().
+  - Al terminar el parpadeo, el LED vuelve automáticamente al estado de presencia.
 */
+static esp_timer_handle_t ledTimer = nullptr;
+volatile int ledTogglesRestantes = 0;
+volatile bool ledEstado = false;
+volatile bool ledSolicitaStop = false;
+volatile bool ledBlinkActivo = false;
+volatile bool ledPresenciaActiva = false;
+
+void aplicarLedPresencia() {
+  if (!ledBlinkActivo) {
+    gpio_set_level((gpio_num_t)LED_PIN, ledPresenciaActiva ? 1 : 0);
+    ledEstado = ledPresenciaActiva;
+  }
+}
+
+void ledTimerCallback(void *arg) {
+  (void)arg;
+
+  if (ledTogglesRestantes <= 0) {
+    ledBlinkActivo = false;
+    ledSolicitaStop = true;
+    return;
+  }
+
+  ledEstado = !ledEstado;
+  gpio_set_level((gpio_num_t)LED_PIN, ledEstado ? 1 : 0);
+  ledTogglesRestantes--;
+
+  if (ledTogglesRestantes <= 0) {
+    ledBlinkActivo = false;
+    ledSolicitaStop = true;
+  }
+}
+
+void configurarLedTimer() {
+  esp_timer_create_args_t args;
+  memset(&args, 0, sizeof(args));
+  args.callback = &ledTimerCallback;
+  args.name = "ledBlink";
+
+  if (esp_timer_create(&args, &ledTimer) != ESP_OK) {
+    Serial.println("ERROR creando timer de LED");
+  }
+}
+
 void actualizarLedPresencia(bool detectado) {
-  gpio_set_level((gpio_num_t)LED_PIN, detectado ? 1 : 0);
+  ledPresenciaActiva = detectado;
+  aplicarLedPresencia();
+}
+
+void iniciarParpadeoLED(uint8_t pulsos) {
+  if (ledTimer == nullptr) return;
+
+  esp_timer_stop(ledTimer);
+  ledBlinkActivo = true;
+  ledSolicitaStop = false;
+  ledEstado = false;
+  gpio_set_level((gpio_num_t)LED_PIN, 0);
+  ledTogglesRestantes = pulsos * 2;
+  esp_timer_start_periodic(ledTimer, LED_HALF_PERIOD_US);
 }
 
 void servicioLED() {
-  // No bloqueante. El LED se actualiza directamente al procesar cada medición.
+  if (ledSolicitaStop && ledTimer != nullptr) {
+    ledSolicitaStop = false;
+    esp_timer_stop(ledTimer);
+    aplicarLedPresencia();
+  }
 }
 
 // ================= ULTRASONIDO POR INTERRUPCIÓN =================
 /*
-  Igual que el peón de salida:
-  - ECHO se mide con interrupción CHANGE.
-  - TRIG se dispara periódicamente.
-  - No usa pulseIn().
-  - No bloquea el UWB ni ESP-NOW.
+  HC-SR04 v3.4:
+  - ECHO se mide por interrupción.
+  - TRIG usa solo un pulso bloqueante de 10 us, despreciable frente al resto del sistema.
+  - No usa pulseIn(), delay() ni pausas por calibración UWB.
+  - Misma lógica en salida y llegada.
 */
 volatile uint32_t usEchoInicioUs = 0;
 volatile uint32_t usDuracionUs = 0;
@@ -162,6 +220,15 @@ void IRAM_ATTR isrEchoUltrasonido() {
     usEchoAlto = false;
     usEsperandoEco = false;
   }
+}
+
+void reiniciarEstadoUltrasonido() {
+  noInterrupts();
+  usMedicionLista = false;
+  usEsperandoEco = false;
+  usEchoAlto = false;
+  interrupts();
+  digitalWrite(TRIG_PIN, LOW);
 }
 
 void dispararUltrasonido() {
@@ -229,15 +296,8 @@ bool obtenerMedicionUltrasonido(float &distancia_cm) {
 }
 
 void procesarMedicionUltrasonido(float d) {
-  bool detectado = (d >= UMBRAL_MIN_CM && d <= UMBRAL_MAX_CM);
+  bool detectado = (d > 0 && d <= umbral_cm);
   actualizarLedPresencia(detectado);
-
-  if (detectado != ultimoEstadoDetectado) {
-    ultimoEstadoDetectado = detectado;
-    Serial.print(detectado ? "HC-SR04 DETECTA: " : "HC-SR04 libre/fuera de rango: ");
-    Serial.print(d, 1);
-    Serial.println(" cm");
-  }
 
   if (detectado) {
     bajoUmbralCount++;
@@ -287,6 +347,8 @@ void enviarFinish(float distancia_cm) {
   for (int i = 0; i < 3; i++) {
     esp_now_send(macCerebro, (uint8_t*)&p, sizeof(p));
   }
+
+  iniciarParpadeoLED(3);
 
   Serial.print(">>> FINISH enviado. Dist HC-SR04=");
   Serial.print(distancia_cm, 1);
@@ -371,13 +433,14 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
+  configurarLedTimer();
 
   configurarUltrasonido();
   configurarEspNow();
   configurarUWB();
 
   Serial.println();
-  Serial.println("PEÓN DE LLEGADA - v3.6 IGUAL A SALIDA: HC-SR04 ISR FAST + LED DIRECTO + ANCHOR UWB");
+  Serial.println("PEÓN DE LLEGADA - v3.7: MISMA LÓGICA DE ULTRASONIDO/LED QUE PEÓN DE SALIDA + ANCHOR UWB");
   Serial.print("MAC local: ");
   Serial.println(WiFi.macAddress());
   Serial.print("Canal ESPNOW: ");
