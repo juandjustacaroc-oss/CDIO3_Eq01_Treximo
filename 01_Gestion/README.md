@@ -36,12 +36,12 @@ Su propósito es evidenciar:
 
 | Documento / Carpeta | Propósito | Estado |
 |---|---|---|
-| `Planeacion/README.md` | Explica la planeación general por fases CDIO/IPAC | En actualización |
-| `Planeacion/IPAC/README.md` | Resume ciclos IPAC, entregables, decisiones y lecciones aprendidas | En actualización |
-| `BOM/README.md` | Documenta costos, proveedores, desviaciones y control financiero | Pendiente |
-| `Planeacion/Definition_of_Done.md` | Define criterios mínimos de finalización para hardware, firmware, software y documentación | Pendiente |
-| `Planeacion/Protocolo_Pruebas/README.md` | Resume pruebas unitarias, integración, pruebas de campo y evidencia requerida | Pendiente |
-| `Auditoria.md` | Registra hallazgos, riesgos, decisiones y trazabilidad técnica | En revisión |
+| `Planeacion/README.md` | Explica la planeación general por fases CDIO/IPAC | Validado |
+| `Planeacion/IPAC/README.md` | Resume ciclos IPAC, entregables, decisiones y lecciones aprendidas | Validado |
+| `BOM/README.md` | Documenta costos, proveedores, desviaciones y control financiero | Validado |
+| `Planeacion/Definition_of_Done.md` | Define criterios mínimos de finalización para hardware, firmware, software y documentación | Validado |
+| `Planeacion/Protocolo_Pruebas/README.md` | Resume pruebas unitarias, integración, pruebas de campo y evidencia requerida | Validado |
+| `Auditoria.md` | Registra hallazgos, riesgos, decisiones y trazabilidad técnica | Validado |
 
 ---
 
